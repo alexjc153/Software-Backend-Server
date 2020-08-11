@@ -4,31 +4,31 @@ var mdAutenticacion = require('../middlewares/autenticacion');
 
 var app = express();
 
-var Perfil = require('../models/perfil');
-var Usuario = require('../models/usuario');
+var Categoria = require('../models/categoria');
+var Grupo = require('../models/grupo');
 
 // =====================================================
-// Obtener todos los perfiles
+// Obtener todas las categorias
 // =====================================================
 app.get('/', (req, res, next) => {
 
-    Perfil.find({})
-        .populate('usuario', 'nombre username')
+    Categoria.find({})
+        .populate('grupo', 'nombre')
         .exec(
-            (err, perfiles) => {
+            (err, categorias) => {
                 if (err) {
                     return res.status(500).json({
                         ok: false,
-                        mensaje: 'Error al cargar los perfiles',
+                        mensaje: 'Error al cargar los categorias',
                         erros: err
                     });
                 }
 
-                Perfil.countDocuments({}, (err, conteo) => {
+                Categoria.countDocuments({}, (err, conteo) => {
 
                     res.status(200).json({
                         ok: true,
-                        perfiles: perfiles,
+                        categorias: categorias,
                         total: conteo
                     });
 
@@ -38,42 +38,42 @@ app.get('/', (req, res, next) => {
 });
 
 // =====================================================
-// Obtener Perfil
+// Obtener Categoría
 // =====================================================
 
 app.get('/:id', (req, res) => {
 
     var id = req.params.id;
 
-    Perfil.findById(id)
+    Categoria.findById(id)
         .exec(
-            (err, perfil) => {
+            (err, categoria) => {
                 if (err) {
                     return res.status(500).json({
                         ok: false,
-                        mensaje: 'Error al buscar el perfil.',
+                        mensaje: 'Error al buscar el categoria.',
                         errors: err
                     });
                 }
 
-                if (!perfil) {
+                if (!categoria) {
                     return res.status(400).json({
                         ok: false,
-                        mensaje: 'El perfil con el id ' + id + ' no existe.',
-                        errors: { message: 'No existe ningun perfil con ese ID' }
+                        mensaje: 'La categoría con el id ' + id + ' no existe.',
+                        errors: { message: 'No existe ningun grupo con ese ID' }
                     });
                 }
 
                 res.status(200).json({
                     ok: true,
-                    perfil: perfil
+                    categoria: categoria
                 });
             });
 
 });
 
 // =====================================================
-// Actualizar Perfil
+// Actualizar Categoría
 // =====================================================
 
 app.put('/:id', [mdAutenticacion.verificaToken, mdAutenticacion.verificaAdmin], (req, res) => {
@@ -81,43 +81,52 @@ app.put('/:id', [mdAutenticacion.verificaToken, mdAutenticacion.verificaAdmin], 
     var id = req.params.id;
     var body = req.body;
 
-    Perfil.findById(id, (err, perfil) => {
+    Categoria.findById(id, (err, categoria) => {
 
         if (err) {
             return res.status(500).json({
                 ok: false,
-                mensaje: 'Error al actualizar el perfil.',
+                mensaje: 'Error al actualizar la categoría.',
                 errors: err
             });
         }
 
-        if (!perfil) {
+        if (!categoria) {
             return res.status(400).json({
                 ok: false,
-                mensaje: 'El perfil con el id ' + id + ' no existe.',
-                errors: { message: 'No existe ningun perfil con ese ID' }
+                mensaje: 'La categoria con el id ' + id + ' no existe.',
+                errors: { message: 'No existe ninguna categoría con ese ID' }
             });
         }
 
-        perfil.nombre = body.nombre;
-        perfil.descripcion = body.descripcion;
-        perfil.estado = body.estado;
-        perfil.usuario = req.usuario._id;
+        categoria.nombre = body.nombre;
+        categoria.descripcion = body.descripcion;
+        categoria.grupo = body.grupo;
 
-        perfil.save((err, perfilGuardado) => {
+
+
+        categoria.save((err, categoriaGuardada) => {
             if (err) {
                 return res.status(500).json({
                     ok: false,
-                    mensaje: 'Error al actualizar perfil.',
+                    mensaje: 'Error al actualizar categoria.',
                     errors: err
                 });
             }
 
             res.status(200).json({
                 ok: true,
-                perfil: perfilGuardado
+                categoria: categoriaGuardada
             });
         });
+
+        Grupo.updateOne({ _id: categoria.grupo }, { relacionado: true }, function(err) {
+            if (err) {
+                console.log(err);
+            } else {
+                console.log("Grupo Actualizado desde Categoría");
+            }
+        })
     });
 
 
@@ -125,79 +134,68 @@ app.put('/:id', [mdAutenticacion.verificaToken, mdAutenticacion.verificaAdmin], 
 });
 
 // =====================================================
-// Crear un nuevo perfil
+// Crear un nueva Categoría
 // =====================================================
 
 app.post('/', [mdAutenticacion.verificaToken, mdAutenticacion.verificaAdmin], (req, res) => {
 
     var body = req.body;
 
-    var perfil = new Perfil({
+    var categoria = new Categoria({
         nombre: body.nombre,
         descripcion: body.descripcion,
-        perfil: body.perfil,
-        usuario: req.usuario._id
+        grupo: body.grupo,
     });
 
-    perfil.save((err, perfilGuardado) => {
+    categoria.save((err, categoriaGuardada) => {
         if (err) {
+            console.log(err);
             return res.status(500).json({
                 ok: false,
-                mensaje: 'Error al crear Perfil',
+                mensaje: 'Error al crear Categoría',
                 errors: err
             });
         }
 
         res.status(201).json({
             ok: true,
-            perfil: perfilGuardado
+            categoria: categoriaGuardada
         });
     });
 
 });
 
 // =====================================================
-// Eliminar un Perfil
+// Eliminar un Categoria
 // =====================================================
 
 app.delete('/:id', [mdAutenticacion.verificaToken, mdAutenticacion.verificaAdmin], (req, res) => {
 
     var id = req.params.id;
 
-    Usuario.findOne({ perfil: id }, (err, relacionado) => {
-        if (!relacionado) {
-            Perfil.findByIdAndRemove(id, (err, perfilEliminado) => {
-                if (err) {
-                    return res.status(500).json({
-                        ok: false,
-                        mensaje: 'Error al eliminar Perfil',
-                        errors: err
-                    });
-                }
-
-                if (!perfilEliminado) {
-                    return res.status(400).json({
-                        ok: false,
-                        mensaje: 'El perfil con el id ' + id + ' no existe.',
-                        errors: { message: 'No existe ningun perfil con ese ID' }
-                    });
-                }
-
-                res.status(200).json({
-                    ok: true,
-                    perfil: perfilEliminado
-                });
-            });
-        } else {
-            return res.status(423).json({
+    Categoria.findByIdAndRemove(id, (err, grupoEliminado) => {
+        // Categoria.findByIdAndRemove(id, (err, grupoEliminado) => {
+        if (err) {
+            return res.status(500).json({
                 ok: false,
-                mensaje: 'El registro está relacionado con Usuarios',
-                errors: { message: 'El registro está relacionado con Usuarios' }
+                mensaje: 'Error al eliminar Categoria',
+                errors: err
             });
         }
-    })
 
+        if (!grupoEliminado) {
+            return res.status(400).json({
+                ok: false,
+                mensaje: 'El grupo con el id ' + id + ' no existe.',
+                errors: { message: 'No existe ningun grupo con ese ID' }
+            });
+        }
 
+        res.status(200).json({
+            ok: true,
+            grupo: grupoEliminado
+        });
+    });
 });
 
 

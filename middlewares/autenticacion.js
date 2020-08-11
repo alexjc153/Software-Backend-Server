@@ -37,8 +37,6 @@ exports.verificaAdmin = function(req, res, next) {
 
     var usuario = req.usuario;
 
-    console.log(usuario);
-
     if (usuario.perfil === '5eec36ac4b823413f0aa6f88') {
         next();
         return;

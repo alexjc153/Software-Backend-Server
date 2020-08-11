@@ -39,6 +39,7 @@ app.use('uploads', serverIndex(__dirname + '/uploads'));
 // Importar rutas
 var appRoutes = require('./routes/app');
 var grupoRoutes = require('./routes/grupo');
+var categoriaRoutes = require('./routes/categoria');
 var perfilRoutes = require('./routes/perfil');
 var usuarioRoutes = require('./routes/usuario');
 var loginRoutes = require('./routes/login');
@@ -52,6 +53,7 @@ var imagenesRoutes = require('./routes/imagenes');
 app.use('/usuario', usuarioRoutes);
 app.use('/perfil', perfilRoutes);
 app.use('/grupo', grupoRoutes);
+app.use('/categoria', categoriaRoutes);
 app.use('/login', loginRoutes);
 app.use('/busqueda', busquedaRoutes);
 app.use('/upload', uploadRoutes);

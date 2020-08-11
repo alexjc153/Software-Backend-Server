@@ -11,4 +11,4 @@ var grupoSchema = new Schema({
 
 grupoSchema.plugin(uniqueValidator, { message: 'El {PATH} debe ser único.' });
 
-module.exports = mongoose.model('grupo', grupoSchema);
+module.exports = mongoose.model('Grupo', grupoSchema);

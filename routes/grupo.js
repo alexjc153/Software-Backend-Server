@@ -5,6 +5,7 @@ var mdAutenticacion = require('../middlewares/autenticacion');
 var app = express();
 
 var Grupo = require('../models/grupo');
+var Categoria = require('../models/categoria');
 
 // =====================================================
 // Obtener todos los grupos
@@ -12,7 +13,6 @@ var Grupo = require('../models/grupo');
 app.get('/', (req, res, next) => {
 
     Grupo.find({})
-        .populate('usuario', 'nombre username')
         .exec(
             (err, grupos) => {
                 if (err) {
@@ -23,7 +23,7 @@ app.get('/', (req, res, next) => {
                     });
                 }
 
-                Grupo.count({}, (err, conteo) => {
+                Grupo.countDocuments({}, (err, conteo) => {
 
                     res.status(200).json({
                         ok: true,
@@ -161,28 +161,45 @@ app.delete('/:id', [mdAutenticacion.verificaToken, mdAutenticacion.verificaAdmin
 
     var id = req.params.id;
 
-    Grupo.findByIdAndRemove(id, (err, grupoEliminado) => {
-        if (err) {
-            return res.status(500).json({
+    Categoria.findOne({ grupo: id }, (err, relacionado) => {
+        if (!relacionado) {
+            Grupo.findByIdAndRemove(id, (err, grupoEliminado) => {
+                if (err) {
+                    return res.status(500).json({
+                        ok: false,
+                        mensaje: 'Error al eliminar Grupo',
+                        errors: err
+                    });
+                }
+
+                if (!grupoEliminado) {
+                    return res.status(400).json({
+                        ok: false,
+                        mensaje: 'El grupo con el id ' + id + ' no existe.',
+                        errors: { message: 'No existe ningun grupo con ese ID' }
+                    });
+                }
+
+
+                res.status(200).json({
+                    ok: true,
+                    grupo: grupoEliminado
+                });
+            })
+        } else {
+            return res.status(423).json({
                 ok: false,
-                mensaje: 'Error al eliminar Grupo',
-                errors: err
+                mensaje: 'El registro está relacionado con Categorías',
+                errors: { message: 'El registro está relacionado con Categorías' }
             });
         }
+    })
 
-        if (!grupoEliminado) {
-            return res.status(400).json({
-                ok: false,
-                mensaje: 'El grupo con el id ' + id + ' no existe.',
-                errors: { message: 'No existe ningun grupo con ese ID' }
-            });
-        }
 
-        res.status(200).json({
-            ok: true,
-            grupo: grupoEliminado
-        });
-    });
+
+
+
+
 });
 
 
